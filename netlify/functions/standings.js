@@ -2,7 +2,7 @@ exports.handler = async function(event) {
   const { code, type, season } = event.queryStringParameters || {};
   if (!code) return { statusCode: 400, body: JSON.stringify({ error: 'Missing code' }) };
 
-  const url = `https://api.football-data.org/v4/competitions/${code}/standings?standingType=${type||'HOME'}&season=${season||2024}`;
+  const url = `https://api.football-data.org/v4/competitions/${code}/standings?standingType=${type||'HOME'}&season=${season||2025}`;
 
   try {
     const res = await fetch(url, {
