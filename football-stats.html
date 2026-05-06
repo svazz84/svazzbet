@@ -492,12 +492,8 @@ const FD_LEAGUE_MAP = {
 const FD_API_KEY = '942eec656d6641dba1abd190904a09ef';
 
 async function fetchFD(code, type, season) {
-  const target = `https://api.football-data.org/v4/competitions/${code}/standings?standingType=${type}&season=${season}`;
-  const proxy = `https://corsproxy.io/?${encodeURIComponent(target)}`;
-  const res = await fetch(proxy, {
-    headers: { 'X-Auth-Token': FD_API_KEY }
-  });
-  if (!res.ok) throw new Error('FD proxy error ' + res.status);
+  const res = await fetch(`/.netlify/functions/standings?code=${code}&type=${type}&season=${season}`);
+  if (!res.ok) throw new Error('FD error ' + res.status);
   return res.json();
 }
 
@@ -525,15 +521,47 @@ async function selectMatch(fixtureId, home, away) {
       fdCode ? fetchFD(fdCode, 'AWAY', 2024).catch(() => null) : Promise.resolve(null),
     ]);
 
-    // Cerca squadra nelle standings FD per nome (parziale)
+    // I dati FD hanno standings[0]=TOTAL, [1]=HOME, [2]=AWAY
     const findFD = (fdData, name) => {
-      const table = fdData?.standings?.[0]?.table || [];
-      return table.find(r => r.team?.name?.toLowerCase().includes(name.split(' ')[0].toLowerCase())
-                          || name.toLowerCase().includes(r.team?.name?.toLowerCase().split(' ')[0]));
+      const table = fdData?.standings?.find(s => s.type === 'HOME' || s.type === 'AWAY')?.table
+                 || fdData?.standings?.[0]?.table || [];
+      const nameLower = name.toLowerCase();
+      return table.find(r => {
+        const tn = (r.team?.name || '').toLowerCase();
+        const ts = (r.team?.shortName || '').toLowerCase();
+        return tn.includes(nameLower.split(' ')[0]) ||
+               nameLower.includes(ts) ||
+               ts.includes(nameLower.split(' ')[0]);
+      });
     };
 
-    const homeRowFD = findFD(fdHome, homeName);
-    const awayRowFD = findFD(fdAway, awayName);
+    const findFDHome = (fdData, name) => {
+      const table = fdData?.standings?.find(s => s.type === 'HOME')?.table || [];
+      const nameLower = name.toLowerCase();
+      return table.find(r => {
+        const tn = (r.team?.name || '').toLowerCase();
+        const ts = (r.team?.shortName || '').toLowerCase();
+        return tn.includes(nameLower.split(' ')[0]) ||
+               nameLower.includes(ts) ||
+               ts.includes(nameLower.split(' ')[0]);
+      });
+    };
+
+    const findFDAway = (fdData, name) => {
+      const table = fdData?.standings?.find(s => s.type === 'AWAY')?.table || [];
+      const nameLower = name.toLowerCase();
+      return table.find(r => {
+        const tn = (r.team?.name || '').toLowerCase();
+        const ts = (r.team?.shortName || '').toLowerCase();
+        return tn.includes(nameLower.split(' ')[0]) ||
+               nameLower.includes(ts) ||
+               ts.includes(nameLower.split(' ')[0]);
+      });
+    };
+
+    // football-data.org restituisce HOME e AWAY nello stesso oggetto
+    const homeRowFD = findFDHome(fdHome, homeName);
+    const awayRowFD = findFDAway(fdAway, awayName);
 
     // Calcola medie casa/trasferta da FD
     const fdAvg = (row, field) => {
