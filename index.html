@@ -517,8 +517,8 @@ async function selectMatch(fixtureId, home, away) {
     // Fetch BSD standings + football-data home/away standings in parallelo
     const [standingsData, fdHome, fdAway] = await Promise.all([
       matchLeagueId ? fetchApi(`/leagues/${matchLeagueId}/standings/`).catch(() => null) : Promise.resolve(null),
-      fdCode ? fetchFD(fdCode, 'HOME', 2024).catch(() => null) : Promise.resolve(null),
-      fdCode ? fetchFD(fdCode, 'AWAY', 2024).catch(() => null) : Promise.resolve(null),
+      fdCode ? fetchFD(fdCode, 'HOME', 2025).catch(() => null) : Promise.resolve(null),
+      fdCode ? fetchFD(fdCode, 'AWAY', 2025).catch(() => null) : Promise.resolve(null),
     ]);
 
     // I dati FD hanno standings[0]=TOTAL, [1]=HOME, [2]=AWAY
